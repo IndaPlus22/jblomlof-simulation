@@ -3,15 +3,28 @@ TEMPLATE FROM PISTON GETTING STARTED PAGE
 A ROTATING SQUARE
 */
 
-const AMOUNT_PENDULUMS: u64 = 10;
-const STARING_ANGLE: f64 = 3.0*PI / 2.0;
-const ANGLE_DIFF_PER: f64 = 0.3 * PI;
-const SLOWDOWN_SPEED: f64 = 0.992; 
-const SIZE_SCALE: f64 = 10.0;
-const TRACE_SIZE: f64 = 2.5;
-const TRACE_POINTS: usize = 500;
-const HEIGHT: u32 = 500;
+const AMOUNT_PENDULUMS: u64 = 10;           // sets the amount of arms.
+const STARING_ANGLE: f64 = 3.0*PI / 2.0;    // sets the first arms angle in radians
+const ANGLE_DIFF_PER: f64 = -0.01 * PI;     // how much each arm differs from its parent
+
+const SLOWDOWN_SPEED: f64 = 1.0;            // the rate at which we keep angle
+                                            // set to  less than 1 if you want it to die. greater than 1 makes it increase in speed.
+
+const SIZE_SCALE: f64 = 10.0;               // the value of each Pendulums length / Width
+
+const TRACE_SIZE: f64 = 2.5;                // the size of each trace point.
+const TRACE_POINTS: usize = 500;            // the amount of trace points at once
+
+const HEIGHT: u32 = 500;                    //init window height and width. Window is resizable.
 const WIDTH: u32 = 600;
+
+mod physics;                                //contains a constant that can alter "gravity".
+                                            
+/*
+Notice
+The length of each pendulum is set window size.
+ */
+
 extern crate glutin_window;
 extern crate graphics;
 extern crate opengl_graphics;
@@ -25,7 +38,6 @@ use piston::event_loop::{EventSettings, Events};
 use piston::input::{RenderArgs, RenderEvent, UpdateArgs, UpdateEvent};
 use piston::window::WindowSettings;
 
-mod physics;
 
 pub struct App {
     gl: GlGraphics, // OpenGL drawing backend.
@@ -43,7 +55,10 @@ impl App {
         const BLUE: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
         const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
 
+        //center point of window
         let (x, y) = (args.window_size[0] / 2.0, args.window_size[1] / 2.0);
+
+        //making the size of pendulums resized so they perfectly fit in window
         let size =
             args.window_size[0].min(args.window_size[1]) / (2.0 * (self.pendulums.len() + 1) as f64);
         for pend in self.pendulums.iter_mut() {
@@ -54,6 +69,7 @@ impl App {
             // Clear the screen.
             clear(WHITE, gl);
             
+            //drawing squares for each trace point.
             for i in self.trace_points.iter() {
                 let rect = rectangle::square(0.0, 0.0, TRACE_SIZE);
                 let transform = c.transform
@@ -61,14 +77,17 @@ impl App {
                 rectangle(GREEN, rect, transform, gl)
             }
             
+            //the diff help me keep track of the ending point of my pendulum chain.
+            // so x + x_diff is the x coord of the end of the chain.
             let mut x_diff: f64 = 0.0;
             let mut y_diff: f64 = 0.0;
+            //drawing each pendulum as a line
             for index_pend in 0..self.pendulums.len() {
                 let current_ref = self.pendulums.get(index_pend).unwrap();
                 let transform = c
                     .transform
                     .trans(x, y)
-                    .trans(-x_diff, y_diff)
+                    .trans(x_diff, y_diff)
                     .rot_rad(current_ref.current_angle);
                 line(
                     if index_pend % 2 == 0 { BLUE } else { RED },
@@ -77,23 +96,30 @@ impl App {
                     transform,
                     gl,
                 );
-                x_diff += current_ref.current_angle.sin() * current_ref.stick_length;
+                x_diff -= current_ref.current_angle.sin() * current_ref.stick_length;
                 y_diff += current_ref.current_angle.cos() * current_ref.stick_length;
             }
+
+            //adding and removing trace points
             if self.trace_points.len() > TRACE_POINTS {
                 self.trace_points.remove(0);
             }
-            self.trace_points.push((x - x_diff, y + y_diff));
+            self.trace_points.push((x + x_diff, y + y_diff));
         });
     }
 
     fn update(&mut self, args: &UpdateArgs) {
+
+        //each pendulum is affecting the next one and the previous one aswell as making the maths on itself.
+        //see physics.rs for physics
+        //NOTICE pendulums are influencing each other, but its implemented so the pendulum above is getting half of the influence
+        //than the bottom one.
         for index_pend in 0..self.pendulums.len() {
             let influence_on_prev: f64 = {
                 let pend = self.pendulums.get_mut(index_pend).unwrap();
-                pend.current_angle *= SLOWDOWN_SPEED;
+                pend.angle_speed *= SLOWDOWN_SPEED;
                 self.influence = pend.update_angle(args.dt);
-                self.influence / 2.0
+                self.influence / 2.0 // <- here half.
             };
             if index_pend != 0 {
                 self.pendulums
