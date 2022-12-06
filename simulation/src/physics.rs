@@ -10,14 +10,13 @@ pub struct Pendulum{
 impl Pendulum {
     pub fn update_angle(&mut self, time_in_seconds: f64) -> f64{
         //uses differential equation from https://en.wikipedia.org/wiki/Pendulum_(mechanics)
-        let angle_acceleration = self.current_angle.sin() * GRAVITY / self.stick_length * time_in_seconds;
-        self.angle_speed += angle_acceleration;
+        let delta_angle_speed = self.current_angle.sin() * GRAVITY / self.stick_length * time_in_seconds;
+        self.angle_speed += delta_angle_speed;
         self.current_angle -= self.angle_speed;
-        -angle_acceleration
+        -delta_angle_speed
     }
 
-    pub fn angle_influence (&mut self, influence :f64) -> f64 {
+    pub fn angle_influence (&mut self, influence :f64) {
         self.angle_speed += influence / 2.0;
-        -influence / 2.0
     }
 }
