@@ -3,14 +3,14 @@ TEMPLATE FROM PISTON GETTING STARTED PAGE
 A ROTATING SQUARE
 */
 
-const AMOUNT_PENDULUMS: u64 = 10;           // sets the amount of arms.
+const AMOUNT_PENDULUMS: u64 = 2;           // sets the amount of arms.
 const STARING_ANGLE: f64 = 3.0*PI / 2.0;    // sets the first arms angle in radians
 const ANGLE_DIFF_PER: f64 = -0.01 * PI;     // how much each arm differs from its parent
 
 const SLOWDOWN_SPEED: f64 = 1.0;            // the rate at which we keep angle
                                             // set to  less than 1 if you want it to die. greater than 1 makes it increase in speed.
 
-const SIZE_SCALE: f64 = 10.0;               // the value of each Pendulums length / Width
+const SIZE_SCALE: f64 = 25.0;               // the value of each Pendulums length / Width
 
 const TRACE_SIZE: f64 = 2.5;                // the size of each trace point.
 const TRACE_POINTS: usize = 500;            // the amount of trace points at once
