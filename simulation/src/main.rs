@@ -5,9 +5,11 @@ A ROTATING SQUARE
 
 const AMOUNT_PENDULUMS: u64 = 10;
 const STARING_ANGLE: f64 = 3.0*PI / 2.0;
-const ANGLE_DIFF_PER: f64 = 0.5 * PI;
-const SLOWDOWN_SPEED: f64 = 0.99; 
-const SIZE_SCALE: f64 = 15.0;
+const ANGLE_DIFF_PER: f64 = 0.3 * PI;
+const SLOWDOWN_SPEED: f64 = 0.992; 
+const SIZE_SCALE: f64 = 10.0;
+const TRACE_SIZE: f64 = 2.5;
+const TRACE_POINTS: usize = 500;
 const HEIGHT: u32 = 500;
 const WIDTH: u32 = 600;
 extern crate glutin_window;
@@ -29,6 +31,7 @@ pub struct App {
     gl: GlGraphics, // OpenGL drawing backend.
     pendulums: Vec<physics::Pendulum>,
     influence: f64,
+    trace_points: Vec<(f64,f64)>
 }
 
 impl App {
@@ -38,6 +41,7 @@ impl App {
         const RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
         const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
         const BLUE: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
+        const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
 
         let (x, y) = (args.window_size[0] / 2.0, args.window_size[1] / 2.0);
         let size =
@@ -49,6 +53,14 @@ impl App {
         self.gl.draw(args.viewport(), |c, gl| {
             // Clear the screen.
             clear(WHITE, gl);
+            
+            for i in self.trace_points.iter() {
+                let rect = rectangle::square(0.0, 0.0, TRACE_SIZE);
+                let transform = c.transform
+                .trans(i.0, i.1).trans(-TRACE_SIZE/2.0, -TRACE_SIZE/2.0);
+                rectangle(GREEN, rect, transform, gl)
+            }
+            
             let mut x_diff: f64 = 0.0;
             let mut y_diff: f64 = 0.0;
             for index_pend in 0..self.pendulums.len() {
@@ -68,6 +80,10 @@ impl App {
                 x_diff += current_ref.current_angle.sin() * current_ref.stick_length;
                 y_diff += current_ref.current_angle.cos() * current_ref.stick_length;
             }
+            if self.trace_points.len() > TRACE_POINTS {
+                self.trace_points.remove(0);
+            }
+            self.trace_points.push((x - x_diff, y + y_diff));
         });
     }
 
@@ -116,6 +132,7 @@ fn main() {
         gl: GlGraphics::new(opengl),
         pendulums: pends,
         influence: 0.0,
+        trace_points: vec![],
     };
 
     let mut events = Events::new(EventSettings::new());

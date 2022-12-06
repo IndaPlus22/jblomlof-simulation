@@ -17,7 +17,7 @@ impl Pendulum {
     }
 
     pub fn angle_influence (&mut self, influence :f64) {
-        self.angle_speed += influence / 2.0;
-        self.current_angle -= influence / 2.0;
+        self.angle_speed += influence / 5.0;
+        self.current_angle += influence / 5.0;
     }
 }
